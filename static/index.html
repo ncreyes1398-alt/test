@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BeatMixer — Song Remixer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">◈</span> BeatMixer
+    </div>
+    <p class="tagline">Swap vocals &amp; instrumentals between any two songs · Auto BPM sync · Pitch control</p>
+  </div>
+</header>
+
+<main>
+  <!-- ── Deck row ── -->
+  <div class="deck-row">
+
+    <!-- Deck A -->
+    <div class="deck" id="deck-a">
+      <div class="deck-header">
+        <span class="deck-id">A</span>
+        <span class="deck-title">DECK A</span>
+      </div>
+
+      <div class="upload-zone" id="upload-a"
+           ondrop="handleDrop(event,'a')"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           onclick="document.getElementById('file-a').click()">
+        <div class="upload-icon">⬆</div>
+        <div class="upload-text">Drop a song here</div>
+        <div class="upload-sub">or click · MP3 WAV FLAC OGG</div>
+        <input type="file" id="file-a" accept=".mp3,.wav,.ogg,.flac,.m4a"
+               onchange="handleFileSelect(event,'a')" hidden />
+      </div>
+
+      <div class="loading-state hidden" id="loading-a">
+        <div class="spinner"></div>
+        <span>Analyzing…</span>
+      </div>
+
+      <div class="song-card hidden" id="info-a">
+        <div class="song-name" id="name-a" title=""></div>
+        <div class="song-stats">
+          <div class="stat-block">
+            <div class="stat-label">BPM</div>
+            <div class="stat-val led" id="bpm-a">—</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">KEY</div>
+            <div class="stat-val" id="key-a">—</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">LENGTH</div>
+            <div class="stat-val" id="dur-a">—</div>
+          </div>
+        </div>
+        <button class="reupload-btn" onclick="resetDeck('a')">↩ Change song</button>
+      </div>
+    </div>
+
+    <!-- ── Mixer Centre ── -->
+    <div class="mixer">
+      <div class="mixer-label">MIXER</div>
+
+      <!-- Mode toggle -->
+      <div class="section-label">MIX MODE</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-ab"
+                onclick="setMode('ab')">
+          <span class="deck-badge a">A</span> vocals +
+          <span class="deck-badge b">B</span> instrumental
+        </button>
+        <button class="mode-btn" id="mode-ba"
+                onclick="setMode('ba')">
+          <span class="deck-badge b">B</span> vocals +
+          <span class="deck-badge a">A</span> instrumental
+        </button>
+      </div>
+
+      <!-- BPM -->
+      <div class="section-label">TARGET BPM</div>
+      <div class="bpm-row">
+        <button class="bpm-snap" onclick="snapBpm('a')" id="snap-a">↑ A</button>
+        <div class="bpm-box">
+          <input type="number" id="target-bpm" value="120"
+                 min="50" max="220" step="0.5"
+                 oninput="onBpmInput()" />
+          <span class="bpm-unit">bpm</span>
+        </div>
+        <button class="bpm-snap" onclick="snapBpm('b')" id="snap-b">↑ B</button>
+      </div>
+      <input type="range" id="bpm-slider" class="range-track"
+             min="50" max="220" step="0.5" value="120"
+             oninput="onBpmSlider()" />
+
+      <!-- Volume faders -->
+      <div class="section-label">VOCAL VOLUME</div>
+      <div class="fader-row">
+        <input type="range" id="vol-vocals" class="range-track"
+               min="0" max="160" value="100" oninput="faderLabel('vol-vocals','lbl-vocals')" />
+        <span class="fader-val" id="lbl-vocals">100%</span>
+      </div>
+
+      <div class="section-label">INSTRUMENTAL VOLUME</div>
+      <div class="fader-row">
+        <input type="range" id="vol-instr" class="range-track"
+               min="0" max="160" value="100" oninput="faderLabel('vol-instr','lbl-instr')" />
+        <span class="fader-val" id="lbl-instr">100%</span>
+      </div>
+
+      <!-- Pitch -->
+      <div class="section-label">PITCH SHIFT <span class="unit-hint">(semitones)</span></div>
+      <div class="fader-row">
+        <span class="fader-edge">−6</span>
+        <input type="range" id="pitch-shift" class="range-track"
+               min="-6" max="6" step="0.5" value="0"
+               oninput="faderLabel('pitch-shift','lbl-pitch',true)" />
+        <span class="fader-val" id="lbl-pitch">0</span>
+        <span class="fader-edge">+6</span>
+      </div>
+
+      <button class="generate-btn" id="generate-btn" onclick="createMix()" disabled>
+        Generate Mix
+      </button>
+    </div>
+
+    <!-- Deck B -->
+    <div class="deck" id="deck-b">
+      <div class="deck-header">
+        <span class="deck-id b">B</span>
+        <span class="deck-title">DECK B</span>
+      </div>
+
+      <div class="upload-zone" id="upload-b"
+           ondrop="handleDrop(event,'b')"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           onclick="document.getElementById('file-b').click()">
+        <div class="upload-icon">⬆</div>
+        <div class="upload-text">Drop a song here</div>
+        <div class="upload-sub">or click · MP3 WAV FLAC OGG</div>
+        <input type="file" id="file-b" accept=".mp3,.wav,.ogg,.flac,.m4a"
+               onchange="handleFileSelect(event,'b')" hidden />
+      </div>
+
+      <div class="loading-state hidden" id="loading-b">
+        <div class="spinner"></div>
+        <span>Analyzing…</span>
+      </div>
+
+      <div class="song-card hidden" id="info-b">
+        <div class="song-name" id="name-b" title=""></div>
+        <div class="song-stats">
+          <div class="stat-block">
+            <div class="stat-label">BPM</div>
+            <div class="stat-val led" id="bpm-b">—</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">KEY</div>
+            <div class="stat-val" id="key-b">—</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">LENGTH</div>
+            <div class="stat-val" id="dur-b">—</div>
+          </div>
+        </div>
+        <button class="reupload-btn" onclick="resetDeck('b')">↩ Change song</button>
+      </div>
+    </div>
+
+  </div><!-- /deck-row -->
+
+  <!-- ── Output section ── -->
+  <div class="output-panel" id="output-panel">
+    <div class="output-idle" id="output-idle">
+      Upload both songs, choose a mix mode, then hit <strong>Generate Mix</strong>
+    </div>
+
+    <div class="output-processing hidden" id="output-processing">
+      <div class="proc-label" id="proc-label">Processing…</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="proc-pct" id="proc-pct">0%</div>
+    </div>
+
+    <div class="output-ready hidden" id="output-ready">
+      <div class="ready-label">Mix ready!</div>
+      <audio id="audio-player" controls></audio>
+      <a id="dl-btn" class="dl-btn" download="beatmixer_output.wav">Download WAV</a>
+      <button class="remix-btn" onclick="resetOutput()">Make another mix</button>
+    </div>
+
+    <div class="output-error hidden" id="output-error">
+      <div class="err-msg" id="err-msg">Something went wrong.</div>
+      <button class="remix-btn" onclick="resetOutput()">Try again</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  BeatMixer · stem separation via mid/side extraction · BPM sync via phase-vocoder time-stretching
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
