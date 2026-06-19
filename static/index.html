@@ -21,28 +21,48 @@
   <!-- ── Deck row ── -->
   <div class="deck-row">
 
-    <!-- Deck A -->
+    <!-- ── Deck A ── -->
     <div class="deck" id="deck-a">
       <div class="deck-header">
         <span class="deck-id">A</span>
         <span class="deck-title">DECK A</span>
       </div>
 
-      <div class="upload-zone" id="upload-a"
-           ondrop="handleDrop(event,'a')"
-           ondragover="handleDragOver(event)"
-           ondragleave="handleDragLeave(event)"
-           onclick="document.getElementById('file-a').click()">
-        <div class="upload-icon">⬆</div>
-        <div class="upload-text">Drop a song here</div>
-        <div class="upload-sub">or click · MP3 WAV FLAC OGG</div>
-        <input type="file" id="file-a" accept=".mp3,.wav,.ogg,.flac,.m4a"
-               onchange="handleFileSelect(event,'a')" hidden />
+      <!-- Source tabs -->
+      <div class="source-tabs" id="tabs-a">
+        <button class="tab-btn active" onclick="setTab('a','file')">File</button>
+        <button class="tab-btn" onclick="setTab('a','yt')">YouTube</button>
+      </div>
+
+      <!-- File upload -->
+      <div class="tab-panel" id="tab-file-a">
+        <div class="upload-zone" id="upload-a"
+             ondrop="handleDrop(event,'a')"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             onclick="document.getElementById('file-a').click()">
+          <div class="upload-icon">⬆</div>
+          <div class="upload-text">Drop a song here</div>
+          <div class="upload-sub">or click · MP3 WAV FLAC OGG</div>
+          <input type="file" id="file-a" accept=".mp3,.wav,.ogg,.flac,.m4a"
+                 onchange="handleFileSelect(event,'a')" hidden />
+        </div>
+      </div>
+
+      <!-- YouTube input -->
+      <div class="tab-panel hidden" id="tab-yt-a">
+        <div class="yt-input-wrap">
+          <div class="yt-icon">▶</div>
+          <input type="url" id="yt-url-a" class="yt-input"
+                 placeholder="Paste YouTube URL…"
+                 onkeydown="if(event.key==='Enter') loadYt('a')" />
+          <button class="yt-load-btn" onclick="loadYt('a')">Load</button>
+        </div>
       </div>
 
       <div class="loading-state hidden" id="loading-a">
         <div class="spinner"></div>
-        <span>Analyzing…</span>
+        <span id="loading-label-a">Analyzing…</span>
       </div>
 
       <div class="song-card hidden" id="info-a">
@@ -69,38 +89,31 @@
     <div class="mixer">
       <div class="mixer-label">MIXER</div>
 
-      <!-- Mode toggle -->
       <div class="section-label">MIX MODE</div>
       <div class="mode-toggle">
-        <button class="mode-btn active" id="mode-ab"
-                onclick="setMode('ab')">
+        <button class="mode-btn active" id="mode-ab" onclick="setMode('ab')">
           <span class="deck-badge a">A</span> vocals +
           <span class="deck-badge b">B</span> instrumental
         </button>
-        <button class="mode-btn" id="mode-ba"
-                onclick="setMode('ba')">
+        <button class="mode-btn" id="mode-ba" onclick="setMode('ba')">
           <span class="deck-badge b">B</span> vocals +
           <span class="deck-badge a">A</span> instrumental
         </button>
       </div>
 
-      <!-- BPM -->
       <div class="section-label">TARGET BPM</div>
       <div class="bpm-row">
         <button class="bpm-snap" onclick="snapBpm('a')" id="snap-a">↑ A</button>
         <div class="bpm-box">
           <input type="number" id="target-bpm" value="120"
-                 min="50" max="220" step="0.5"
-                 oninput="onBpmInput()" />
+                 min="50" max="220" step="0.5" oninput="onBpmInput()" />
           <span class="bpm-unit">bpm</span>
         </div>
         <button class="bpm-snap" onclick="snapBpm('b')" id="snap-b">↑ B</button>
       </div>
       <input type="range" id="bpm-slider" class="range-track"
-             min="50" max="220" step="0.5" value="120"
-             oninput="onBpmSlider()" />
+             min="50" max="220" step="0.5" value="120" oninput="onBpmSlider()" />
 
-      <!-- Volume faders -->
       <div class="section-label">VOCAL VOLUME</div>
       <div class="fader-row">
         <input type="range" id="vol-vocals" class="range-track"
@@ -115,7 +128,6 @@
         <span class="fader-val" id="lbl-instr">100%</span>
       </div>
 
-      <!-- Pitch -->
       <div class="section-label">PITCH SHIFT <span class="unit-hint">(semitones)</span></div>
       <div class="fader-row">
         <span class="fader-edge">−6</span>
@@ -131,28 +143,48 @@
       </button>
     </div>
 
-    <!-- Deck B -->
+    <!-- ── Deck B ── -->
     <div class="deck" id="deck-b">
       <div class="deck-header">
         <span class="deck-id b">B</span>
         <span class="deck-title">DECK B</span>
       </div>
 
-      <div class="upload-zone" id="upload-b"
-           ondrop="handleDrop(event,'b')"
-           ondragover="handleDragOver(event)"
-           ondragleave="handleDragLeave(event)"
-           onclick="document.getElementById('file-b').click()">
-        <div class="upload-icon">⬆</div>
-        <div class="upload-text">Drop a song here</div>
-        <div class="upload-sub">or click · MP3 WAV FLAC OGG</div>
-        <input type="file" id="file-b" accept=".mp3,.wav,.ogg,.flac,.m4a"
-               onchange="handleFileSelect(event,'b')" hidden />
+      <!-- Source tabs -->
+      <div class="source-tabs" id="tabs-b">
+        <button class="tab-btn active" onclick="setTab('b','file')">File</button>
+        <button class="tab-btn" onclick="setTab('b','yt')">YouTube</button>
+      </div>
+
+      <!-- File upload -->
+      <div class="tab-panel" id="tab-file-b">
+        <div class="upload-zone" id="upload-b"
+             ondrop="handleDrop(event,'b')"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             onclick="document.getElementById('file-b').click()">
+          <div class="upload-icon">⬆</div>
+          <div class="upload-text">Drop a song here</div>
+          <div class="upload-sub">or click · MP3 WAV FLAC OGG</div>
+          <input type="file" id="file-b" accept=".mp3,.wav,.ogg,.flac,.m4a"
+                 onchange="handleFileSelect(event,'b')" hidden />
+        </div>
+      </div>
+
+      <!-- YouTube input -->
+      <div class="tab-panel hidden" id="tab-yt-b">
+        <div class="yt-input-wrap">
+          <div class="yt-icon">▶</div>
+          <input type="url" id="yt-url-b" class="yt-input"
+                 placeholder="Paste YouTube URL…"
+                 onkeydown="if(event.key==='Enter') loadYt('b')" />
+          <button class="yt-load-btn" onclick="loadYt('b')">Load</button>
+        </div>
       </div>
 
       <div class="loading-state hidden" id="loading-b">
         <div class="spinner"></div>
-        <span>Analyzing…</span>
+        <span id="loading-label-b">Analyzing…</span>
       </div>
 
       <div class="song-card hidden" id="info-b">
@@ -180,7 +212,7 @@
   <!-- ── Output section ── -->
   <div class="output-panel" id="output-panel">
     <div class="output-idle" id="output-idle">
-      Upload both songs, choose a mix mode, then hit <strong>Generate Mix</strong>
+      Load songs on both decks, choose a mix mode, then hit <strong>Generate Mix</strong>
     </div>
 
     <div class="output-processing hidden" id="output-processing">

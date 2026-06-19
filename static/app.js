@@ -8,6 +8,47 @@ const state = {
   pollTimer: null,
 };
 
+// ── Tab switching (File / YouTube) ─────────────────────────────────────────
+
+function setTab(deck, tab) {
+  const tabs = el(`tabs-${deck}`).querySelectorAll('.tab-btn');
+  tabs.forEach((btn, i) => btn.classList.toggle('active', i === (tab === 'file' ? 0 : 1)));
+  show(`tab-file-${deck}`, tab === 'file');
+  show(`tab-yt-${deck}`,   tab === 'yt');
+}
+
+async function loadYt(deck) {
+  const input = el(`yt-url-${deck}`);
+  const url = input.value.trim();
+  if (!url) return;
+
+  if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+    alert('Please enter a valid YouTube URL');
+    return;
+  }
+
+  show(`tab-yt-${deck}`, false);
+  show(`loading-${deck}`, true);
+  el(`loading-label-${deck}`).textContent = 'Downloading from YouTube…';
+
+  const form = new FormData();
+  form.append('url', url);
+
+  try {
+    const res = await fetch('/api/yt-upload', { method: 'POST', body: form });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'YouTube download failed' }));
+      throw new Error(err.detail || 'YouTube download failed');
+    }
+    const data = await res.json();
+    applyTrackInfo(deck, data);
+  } catch (err) {
+    show(`loading-${deck}`, false);
+    show(`tab-yt-${deck}`, true);
+    alert(`Error: ${err.message}`);
+  }
+}
+
 // ── Upload & analysis ──────────────────────────────────────────────────────
 
 function handleDragOver(e) {
@@ -31,17 +72,33 @@ function handleFileSelect(e, deck) {
   if (file) uploadFile(file, deck);
 }
 
+function applyTrackInfo(deck, data) {
+  state[deck].fileId   = data.file_id;
+  state[deck].bpm      = data.bpm;
+  state[deck].filename = data.filename;
+
+  el(`name-${deck}`).textContent = data.filename;
+  el(`name-${deck}`).title       = data.filename;
+  el(`bpm-${deck}`).textContent  = data.bpm;
+  el(`key-${deck}`).textContent  = data.key;
+  el(`dur-${deck}`).textContent  = fmtDuration(data.duration);
+
+  show(`loading-${deck}`, false);
+  show(`info-${deck}`, true);
+  updateGenerateBtn();
+}
+
 async function uploadFile(file, deck) {
   const allowed = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a'];
   const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
   if (!allowed.includes(ext)) {
-    showError(`Unsupported format: ${ext}`);
+    alert(`Unsupported format: ${ext}`);
     return;
   }
 
-  show(`upload-${deck}`, false);
+  show(`tab-file-${deck}`, false);
   show(`loading-${deck}`, true);
-  show(`info-${deck}`, false);
+  el(`loading-label-${deck}`).textContent = 'Analyzing…';
 
   const form = new FormData();
   form.append('file', file);
@@ -52,34 +109,25 @@ async function uploadFile(file, deck) {
       const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
       throw new Error(err.detail || 'Upload failed');
     }
-    const data = await res.json();
-
-    state[deck].fileId   = data.file_id;
-    state[deck].bpm      = data.bpm;
-    state[deck].filename = data.filename;
-
-    el(`name-${deck}`).textContent = data.filename;
-    el(`name-${deck}`).title       = data.filename;
-    el(`bpm-${deck}`).textContent  = data.bpm;
-    el(`key-${deck}`).textContent  = data.key;
-    el(`dur-${deck}`).textContent  = fmtDuration(data.duration);
-
-    show(`loading-${deck}`, false);
-    show(`info-${deck}`, true);
-
-    updateGenerateBtn();
+    applyTrackInfo(deck, await res.json());
   } catch (err) {
     show(`loading-${deck}`, false);
-    show(`upload-${deck}`, true);
+    show(`tab-file-${deck}`, true);
     alert(`Error: ${err.message}`);
   }
 }
 
 function resetDeck(deck) {
   state[deck] = { fileId: null, bpm: null, filename: null };
-  show(`upload-${deck}`, true);
   show(`info-${deck}`, false);
+  show(`tab-file-${deck}`, true);
+  show(`tab-yt-${deck}`, false);
   el(`file-${deck}`).value = '';
+  el(`yt-url-${deck}`).value = '';
+  // Reset tabs to File
+  const tabs = el(`tabs-${deck}`).querySelectorAll('.tab-btn');
+  tabs[0].classList.add('active');
+  tabs[1].classList.remove('active');
   updateGenerateBtn();
 }
 

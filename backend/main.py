@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
 
 from audio_processor import AudioProcessor
+from youtube_downloader import download_youtube_audio
 
 app = FastAPI(title="BeatMixer")
 
@@ -79,6 +80,30 @@ async def upload_song(file: UploadFile = File(...)):
     except Exception as e:
         upload_path.unlink(missing_ok=True)
         raise HTTPException(500, str(e))
+
+
+@app.post("/api/yt-upload")
+async def upload_from_youtube(url: str = Form(...)):
+    """Download audio from a YouTube URL and analyze it."""
+    if not url.strip():
+        raise HTTPException(400, "URL is required")
+
+    try:
+        import asyncio
+        loop = asyncio.get_event_loop()
+
+        file_path, title, file_id = await loop.run_in_executor(
+            executor, download_youtube_audio, url, UPLOADS_DIR
+        )
+
+        result = await loop.run_in_executor(
+            executor, processor.analyze_song, file_path
+        )
+        result["file_id"] = file_id
+        result["filename"] = title
+        return JSONResponse(result)
+    except Exception as e:
+        raise HTTPException(500, f"YouTube download failed: {e}")
 
 
 @app.post("/api/process")
