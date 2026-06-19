@@ -13,6 +13,18 @@ import uvicorn
 
 from audio_processor import AudioProcessor
 from youtube_downloader import download_youtube_audio
+import subprocess
+import imageio_ffmpeg
+
+_FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+
+
+def wav_to_mp3(wav_path: str, mp3_path: str, bitrate: str = "192k") -> None:
+    subprocess.run(
+        [_FFMPEG, "-y", "-i", wav_path, "-codec:a", "libmp3lame",
+         "-b:a", bitrate, "-loglevel", "error", mp3_path],
+        check=True,
+    )
 
 app = FastAPI(title="BeatMixer")
 
@@ -126,15 +138,17 @@ async def process_mix(
         raise HTTPException(400, "vocals_from must be 'a' or 'b'")
 
     job_id = str(uuid.uuid4())
-    output_path = str(OUTPUTS_DIR / f"{job_id}.wav")
+    wav_path = str(OUTPUTS_DIR / f"{job_id}.wav")
+    mp3_path = str(OUTPUTS_DIR / f"{job_id}.mp3")
 
     with jobs_lock:
         jobs[job_id] = {"status": "processing", "progress": 0}
 
     def run():
         def cb(p):
+            # Reserve last 5% for MP3 conversion
             with jobs_lock:
-                jobs[job_id]["progress"] = p
+                jobs[job_id]["progress"] = int(p * 0.95)
 
         try:
             processor.create_mix(
@@ -145,9 +159,12 @@ async def process_mix(
                 vocals_volume=vocals_volume,
                 instrumental_volume=instrumental_volume,
                 pitch_shift=pitch_shift,
-                output_path=output_path,
+                output_path=wav_path,
                 progress_callback=cb,
             )
+            # Convert WAV → MP3 then clean up the intermediate WAV
+            wav_to_mp3(wav_path, mp3_path)
+            Path(wav_path).unlink(missing_ok=True)
             with jobs_lock:
                 jobs[job_id] = {"status": "complete", "progress": 100}
         except Exception as e:
@@ -175,8 +192,10 @@ async def download_mix(job_id: str):
     if not job or job["status"] != "complete":
         raise HTTPException(404, "Mix not ready")
 
-    output_path = OUTPUTS_DIR / f"{job_id}.wav"
-    return FileResponse(str(output_path), media_type="audio/wav", filename="beatmixer_output.wav")
+    mp3_path = OUTPUTS_DIR / f"{job_id}.mp3"
+    if not mp3_path.exists():
+        raise HTTPException(404, "Output file not found")
+    return FileResponse(str(mp3_path), media_type="audio/mpeg", filename="beatmixer_output.mp3")
 
 
 # Serve static assets

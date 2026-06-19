@@ -241,9 +241,10 @@ function setProgress(pct, label) {
 
 function showPlayer(jobId) {
   const downloadUrl = `/api/download/${jobId}`;
-  const player = el('audio-player');
-  player.src   = downloadUrl;
-  el('dl-btn').href = downloadUrl;
+  el('audio-player').src = downloadUrl;
+  const dlBtn = el('dl-btn');
+  dlBtn.href = downloadUrl;
+  dlBtn.download = 'beatmixer_output.mp3';
 
   show('output-processing', false);
   show('output-ready', true);
