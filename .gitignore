@@ -4,3 +4,7 @@ uploads/
 outputs/
 *.wav
 *.mp3
+
+# PlatformIO / EEG firmware
+eeg-cap-esp32/firmware/.pio/
+eeg-cap-esp32/firmware/include/secrets.h
